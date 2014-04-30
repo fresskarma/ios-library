@@ -208,9 +208,10 @@ NSString const *OCWebDAVModificationDateKey	= @"modificationdate";
     }];
     
     //Execute task when backgroun expired
-    [operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:^{
+    [self onOperation:operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:^{
         handler();
     }];
+
     
 	operation.outputStream = [NSOutputStream outputStreamToFileAtPath:localDestination append:NO];
     
@@ -221,6 +222,16 @@ NSString const *OCWebDAVModificationDateKey	= @"modificationdate";
     [sharedOCCommunication addOperationToTheNetworkQueue:operation];
     
     return operation;
+}
+
+// Wrapper for OCHTTPRequestOperation#setShouldExecuteAsBackgroundTaskWithExpirationHandler: (which aborts a task
+// if background time expires for an iOS app) since this functionality must not be built for OS X targets.
+- (void)onOperation:(OCHTTPRequestOperation*)operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:(void (^)(void))handler {
+#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
+    [operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:^{
+        handler();
+    }];
+#endif
 }
 
 - (void)makeCollection:(NSString *)path onCommunication:
@@ -277,7 +288,7 @@ NSString const *OCWebDAVModificationDateKey	= @"modificationdate";
         progress(bytesWrote, totalBytesWrote);
     }];
     
-    [operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:^{
+    [self onOperation:operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:^{
         handler();
     }];
     
@@ -316,7 +327,7 @@ NSString const *OCWebDAVModificationDateKey	= @"modificationdate";
         progress(bytesWrote, totalBytesWrote);
     }];
     
-    [operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:^{
+    [self onOperation:operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:^{
         handler();
     }];
     
